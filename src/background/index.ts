@@ -3,6 +3,9 @@ console.log("Background runing")
 let tabs: { [key: number]: boolean } = {}
 // Example function to attach to a tab (triggered by some user action, e.g., button click)
 function attachToTab(tabId: number) {
+  if (tabs[tabId]) {
+    return;
+  }
   const protocolVersion = '1.3'; // Use an appropriate protocol version
 
   Reflect.set(tabs, tabId, true);
@@ -21,15 +24,30 @@ function deatchToTab(tabId: number) {
   }
 }
 
-function clickMouse(tabId: number, message: any, button: string) {
-  let position = message.position
+function clickMouse(tabId: number, message: any) {
+  const position = message.position;
+  const button = message.button;
+  console.log("Mouse click on: ", position)
 
+  console.log("Mouse Pressed");
   chrome.debugger.sendCommand({ tabId }, "Input.dispatchMouseEvent", {
     type: 'mousePressed',
     x: position.x,
     y: position.y,
+    clickCount: 1,
     button,
-  })
+  }).then(() => {
+      setTimeout(() => {
+        console.log("Mouse Released")
+        chrome.debugger.sendCommand({ tabId }, "Input.dispatchMouseEvent", {
+          type: 'mouseReleased',
+          clickCount: 1,
+          x: position.x,
+          y: position.y,
+          button,
+        })
+      }, 300);
+    });
 }
 
 chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
@@ -41,7 +59,8 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
 
   switch (message.type) {
     case "click":
-      clickMouse(tabId, message, "left");
+      attachToTab(tabId);
+      clickMouse(tabId, message);
     break;
     case "debug.attach":
       attachToTab(tabId);
