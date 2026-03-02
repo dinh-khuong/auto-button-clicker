@@ -8,9 +8,9 @@ setInterval(() => {
     button: "left",
   });
 
-  // if (!checkQuerries([ ".ytp-skip-ad-button" ])) {
-  //   dettachDebugger();
-  // }
+  if (!checkQuerries([ ".ytp-skip-ad-button" ])) {
+    dettachDebugger();
+  }
 }, 500)
 
 // // Check if the browser supports the Media Session API

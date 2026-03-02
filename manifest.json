@@ -12,5 +12,9 @@
       "matches": ["https://www.youtube.com/*"],
       "js": ["contentScript.js"]
     }
-  ]
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Ad Skipper Settings"
+  }
 }

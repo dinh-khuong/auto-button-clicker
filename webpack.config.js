@@ -7,7 +7,8 @@ export default {
 	target: 'web',
 	entry: {
 		contentScript: './src/content/index.ts',
-		background: './src/background/index.ts'
+		background: './src/background/index.ts',
+		popup: './src/popup.ts',
 	},
 	output: {
 		path: path.resolve(import.meta.dirname, 'dist'),
@@ -17,6 +18,12 @@ export default {
 	plugins: [
 		new HtmlWebpackPlugin({
 			template: './src/index.html',
+		}),
+		new CopyPlugin({
+			patterns: [{
+				from: path.resolve('./src/popup.html'),
+				to: path.resolve('dist'),
+			}]
 		}),
 		new CopyPlugin({
 			patterns: [{
@@ -42,6 +49,30 @@ export default {
 				// 	},
 				// },
 			},
+			// {
+			// 	test: /\.{js|jsx|ts|tsx}/,
+			// 	exclude: /node_modules/,
+			// 	use: {
+			// 		loader: 'babel-loader',
+			// 		  options: {
+			// 			presets: ["@babel/preset-env", "solid"]
+			// 		}
+			// 	}
+			// },
+			// {
+			// 	test: /\.{ts|tsx}$/,
+			// 	exclude: /node_modules/,
+			// 	use: {
+			// 		loader: 'babel-loader',
+			// 		options: {
+			// 			presets: [
+			// 				'@babel/preset-env',
+							// ['@babel/preset-react', {runtime: 'automatic'}],
+			// 				'@babel/preset-typescript',
+			// 			],
+			// 		},
+			// 	},
+			// },
 		]
 	},
 	resolve: {
