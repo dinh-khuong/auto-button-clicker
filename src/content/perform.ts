@@ -8,25 +8,35 @@ function getElement(event: MacroEvent) {
     return;
   }
 
-  if (event.id !== "") {
-    return document.getElementById(event.id);
-  } else {
+  if (event.id === "") {
     return document.getElementsByClassName(event.className).item(event.index);
+  } else {
+    return document.getElementById(event.id);
   }
 }
 
-function clickElement({ event, button }: { event: MacroEvent, button: string }) {
+function attachToTab(tabId: number) {
+  const protocolVersion = '1.3'; // Use an appropriate protocol version
+
+  chrome.debugger.attach({ tabId: tabId }, protocolVersion, () => {
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError.message);
+      return;
+    }
+  });
+}
+
+function clickElement({ event, button, success, failed, }: { event: MacroEvent, button: string, success: () => void, failed: () => void }) {
   const element = getElement(event);
-  if (!element) {
-    return;
-  }
 
   if (element) {
+    console.log("Click", element);
     chrome.runtime.sendMessage({
       type: "debug.attach",
     });
 
     const rect = element.getBoundingClientRect();
+
     chrome.runtime.sendMessage({
       type: "click",
       position: {
@@ -35,8 +45,11 @@ function clickElement({ event, button }: { event: MacroEvent, button: string }) 
       },
       button,
     })
-  } 
 
+    success();
+  } else {
+    failed();
+  }
 }
 
 function checkQuerries(querries: Array<string>) {

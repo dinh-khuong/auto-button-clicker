@@ -19,7 +19,6 @@ export type Macro = {
 };
 
 export type App = {
-  onNewEvent: boolean,
   currentMacro: number,
   view: "macro-list" | "event-list",
   createIdx: number,

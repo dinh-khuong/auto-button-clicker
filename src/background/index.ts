@@ -4,13 +4,34 @@ console.log("Background runing")
 
 var macros: Array<Macro> = [];
 var app: App = {
-  onNewEvent: false,
   currentMacro: -1,
   view: "macro-list",
   createIdx: 0,
 };
 
 if (false) {
+  chrome.storage.local.set({ macros, app }, () => {
+    console.log("Save data", macros, app);
+  });
+}
+
+function updateData(callback: () => void) {
+  chrome.storage.local.get(["macros", "app"], (result) => {
+    if (result.macros) {
+      //@ts-ignore
+      macros = result.macros;
+    }
+    if (result.app) {
+      //@ts-ignore
+      app = result.app;
+    }
+
+    callback();
+  });
+}
+updateData(() => {});
+
+function updateGlobal() {
   chrome.storage.local.set({ macros, app }, () => {
     console.log("Save data", macros, app);
   });
@@ -84,10 +105,23 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
       clickMouse(tabId, message);
       break;
     case "debug.attach":
+      console.log("Prevous: attach debugger");
       attachToTab(tabId);
       break;
     case "debug.detach":
+      console.log("Prevous: detach debugger");
       deatchToTab(tabId);
+      break;
+    case "popup.MacroEvent":
+      updateData(() => {
+        if (app.currentMacro !== -1) {
+          const index = macros.findIndex((ele) => ele.id === app.currentMacro);
+          if (index !== -1) {
+            macros[index].events.push(message.macro);
+            updateGlobal();
+          }
+        }
+      });
       break;
   }
 })
@@ -107,32 +141,5 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // is enough to boot the Service Worker back up.
   }
 });
-
-
-chrome.storage.local.get(["macros", "app"], (result) => {
-  if (result.macros) {
-    //@ts-ignore
-    macros = result.macros;
-  }
-  if (result.app) {
-    //@ts-ignore
-    app = result.app;
-  }
-
-  chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
-    if (message.type == "popup.MacroEvent" && app.onNewEvent) {
-      if (app.currentMacro >= 0) {
-        macros[app.currentMacro].events.push(message.macro);
-        updateGlobal();
-      }
-    }
-  });
-});
-
-function updateGlobal() {
-  chrome.storage.local.set({ macros, app }, () => {
-    console.log("Save data", macros, app);
-  });
-}
 
 
