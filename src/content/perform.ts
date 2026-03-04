@@ -1,29 +1,15 @@
-
-// var debuggerAttached = false
-
 import type { MacroEvent } from "./macro";
 
 function getElement(event: MacroEvent) {
-  if (event.type !== "element") {
-    return;
+  switch (event.type) {
+    case "id":
+      return document.getElementById(event.id);
+    case "class":
+      return document.getElementsByClassName(event.className).item(event.index);
+    case "text":
+      ///TODO add get element by text
+      return null;
   }
-
-  if (event.id === "") {
-    return document.getElementsByClassName(event.className).item(event.index);
-  } else {
-    return document.getElementById(event.id);
-  }
-}
-
-function attachToTab(tabId: number) {
-  const protocolVersion = '1.3'; // Use an appropriate protocol version
-
-  chrome.debugger.attach({ tabId: tabId }, protocolVersion, () => {
-    if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError.message);
-      return;
-    }
-  });
 }
 
 function clickElement({ event, button, success, failed, }: { event: MacroEvent, button: string, success: () => void, failed: () => void }) {

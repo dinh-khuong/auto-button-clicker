@@ -1,14 +1,9 @@
 export type MacroEvent = {
-  type: "element",
-  className: string,
+  type: "class" | "id" | "text",
   id: string,
+  className: string,
+  text: string,
   index: number,
-} | {
-  type: "click",
-  position: {
-    x: number,
-    y: number,
-  }
 };
 
 export type Macro = {

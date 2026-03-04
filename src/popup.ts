@@ -94,14 +94,14 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 
 	let playBtn = document.createElement('button');
 	playBtn.innerHTML = `${macro.active ?
-	`<img src="./assets/pause.svg" alt="Pause" width="20" height="20"></img>` :
-	`<img src="./assets/play.svg" alt="Play" width="20" height="20"></img>`
+		`<img src="./assets/pause.svg" alt="Pause" width="20" height="20"></img>` :
+		`<img src="./assets/play.svg" alt="Play" width="20" height="20"></img>`
 		}`;
 
 	playBtn.onclick = () => {
 		macro.active = !macro.active;
 		app.view = "macro-list";
-		chrome.tabs.query({currentWindow: true, active: true}, (tabs) => {
+		chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
 			const tab = tabs[0];
 			if (macro.active) {
 				chrome.tabs.sendMessage(tab.id, {
@@ -118,22 +118,45 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 		updateGlobal();
 		render();
 	};
-	newItem.appendChild(playBtn);
 
+	newItem.appendChild(playBtn);
 	newItem.appendChild(editBtn);
 	newItem.appendChild(deleteBtn);
 	macrosList.appendChild(newItem);
+}
+
+function getEventName(event: MacroEvent) {
+	switch (event.type) {
+		case "id":
+			return event.id;
+		case "class":
+			return event.className;
+		case "text":
+			return event.text;
+	}
 }
 
 function addEventItem(eventList: HTMLElement, event: MacroEvent) {
 	let newItem = document.createElement("div");
 	newItem.classList.add("macro-item");
 	newItem.innerHTML = `
-<div>${event.type}</div>
+<div class="macro-item-name">${getEventName(event)}</div>
+<select>
+	<option value="id">Id</option>
+	<option value="class">Class</option>
+	<option value="text">Text</option>
+</select>
 `;
+	let typeSelect = newItem.getElementsByTagName("select").item(0);
+	typeSelect.value = event.type;
+	typeSelect.addEventListener('change', (ev) => {
+		event.type = (ev.target as HTMLSelectElement).value as typeof event.type;
+
+		updateGlobal();
+		render();
+	});
 	eventList.appendChild(newItem);
 }
-
 
 function viewEventList() {
 	app.view = "event-list";
@@ -142,8 +165,8 @@ function viewEventList() {
 <div class="create-macro">
 	<div class="create-macro-btn-holder">
 		${app.currentMacro === -1 ?
-		`<button id="new-macro">New Macro</button>`:
-		`<button id="pickup-btn">Pickup</button><button id="stop-btn">Stop</button>`
+			`<button id="new-macro">New Macro</button>` :
+			`<button id="pickup-btn">Pickup</button><button id="stop-btn">Stop</button>`
 		}
 	</div>
 	<div id="events-list" class="column-list">

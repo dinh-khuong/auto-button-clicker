@@ -2,11 +2,11 @@ import { clickElement, dettachDebugger } from './perform';
 import { type MacroEvent, type Macro, type App } from './macro';
 
 var macros: Array<Macro> = [];
-var app: App = {
-  createIdx: 0,
-  view: "macro-list",
-  currentMacro: -1,
-};
+// var app: App = {
+//   createIdx: 0,
+//   view: "macro-list",
+//   currentMacro: -1,
+// };
 
 function updateData(callback: () => void) {
   chrome.storage.local.get(["macros", "app"], (result) => {
@@ -66,7 +66,7 @@ function runMacro(macro: Macro) {
         }, 500);
       }
     });
-    
+
   }
 
   oneEvent(0, -1);
@@ -99,19 +99,23 @@ function drawBoundingBox(event: Event) {
   boxElement.style.width = `${rectElement.width}px`;
   boxElement.style.height = `${rectElement.height}px`;
 
-  boxElement.style.left =  `${rectElement.x}px`;
+  boxElement.style.left = `${rectElement.x}px`;
   boxElement.style.top = `${rectElement.y}px`;
 }
 
 chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
-  if (message.type === "pickup.Element") {
-    document.addEventListener('mouseover', drawBoundingBox, { passive: true });
-    document.addEventListener('click', addNewMacro, { passive: true });
-    updateData(() => {});
-  } else if (message.type === "play.Macro") {
-    runMacro(message.macro);
-  } else if (message.type == "stop.Macro") {
-    stopingId = message.macro.id;
+  switch (message.type) {
+    case "pickup.Element":
+      document.addEventListener('mouseover', drawBoundingBox, { passive: true });
+      document.addEventListener('click', addNewMacro, { passive: true });
+      updateData(() => { });
+      break;
+    case "play.Macro":
+      runMacro(message.macro);
+      break;
+    case "stop.Macro":
+      stopingId = message.macro.id;
+      break;
   }
 })
 
@@ -125,25 +129,24 @@ function addNewMacro(event: PointerEvent) {
   const eleClasses = currentElement.classList.toString();
 
   let macroEvent: MacroEvent = {
-    type: "element",
-    id: "",
+    id: eleId,
+    type: "class",
+    text: currentElement.textContent.length < 128 ? currentElement.textContent : "",
     className: eleClasses,
     index: 0,
   };
-  
-  if (macroEvent.id === "") {
-    const candidates = document.getElementsByClassName(eleClasses);
-    for (const candidate of candidates) {
-      if (candidate === currentElement) {
-        break;
-      }
-      macroEvent.index += 1;
+
+  const candidates = document.getElementsByClassName(eleClasses);
+  for (const candidate of candidates) {
+    if (candidate === currentElement) {
+      break;
     }
+    macroEvent.index += 1;
   }
 
   boxElement.style.width = "0"
   boxElement.style.height = "0";
-  boxElement.style.left =  "0";
+  boxElement.style.left = "0";
   boxElement.style.top = "0";
 
   chrome.runtime.sendMessage({
