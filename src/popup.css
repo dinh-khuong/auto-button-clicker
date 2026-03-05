@@ -27,8 +27,22 @@ body {
 	color: var(--foreground-primary);
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 #main-body {
-	width: 310px;
+	width: 335px;
+	h1 {
+		text-align: center;
+	}
 }
 
 #popup-header {
@@ -70,7 +84,7 @@ body {
 	}
 
 	.click-count {
-		width: 25px;
+		width: 10px;
 	}
 }
 

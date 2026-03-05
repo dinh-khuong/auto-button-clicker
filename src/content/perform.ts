@@ -7,23 +7,36 @@ function getElement(event: MacroEvent) {
     case "class":
       return document.getElementsByClassName(event.className).item(event.index);
     case "text":
-      ///TODO add get element by text
-      return null;
+      const xpath = `//*[normalize-space(text()) = '${event.text}']`;
+
+      const result = document.evaluate(
+        xpath, 
+        document, 
+        null, 
+        XPathResult.ORDERED_NODE_ITERATOR_TYPE, 
+        null
+      );
+      if (!result && !result.invalidIteratorState) {
+        return null;
+      }
+
+      let res = result.iterateNext() as HTMLElement | null;
+      return res;
   }
 }
 
-function clickElement({ event, success, failed, }: { event: MacroEvent, success: () => void, failed: () => void }) {
+async function clickElement({ event, success, failed, }: { event: MacroEvent, success: () => void, failed: () => void }) {
   const element = getElement(event);
 
   if (element) {
-    console.log("Click", element);
-    chrome.runtime.sendMessage({
+    // console.log("Click", element);
+    await chrome.runtime.sendMessage({
       type: "debug.attach",
     });
 
     const rect = element.getBoundingClientRect();
 
-    chrome.runtime.sendMessage({
+    await chrome.runtime.sendMessage({
       type: "click",
       position: {
         x: rect.x + rect.width / 2,

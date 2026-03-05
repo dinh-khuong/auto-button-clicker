@@ -4,7 +4,7 @@ var macros: Array<Macro> = [];
 var app: App = {
 	createIdx: 0,
 	view: "macro-list",
-	currentMacro: -1,
+	currentMacroId: -1,
 };
 
 function updateGlobal() {
@@ -20,7 +20,7 @@ function render() {
 		viewMacroList();
 	}
 
-	if (app.currentMacro === -1) {
+	if (app.currentMacroId === -1) {
 		document.getElementById("create-macro-item").innerHTML = "Create Macro";
 	} else {
 		document.getElementById("create-macro-item").innerHTML = "Edit Macro";
@@ -62,6 +62,17 @@ function viewMacroList() {
 	}
 }
 
+function stopMacro(macro: Macro) {
+	chrome.tabs.query({}, (tabs) => {
+		for (const tab of tabs) {
+			chrome.tabs.sendMessage(tab.id, {
+				type: "stop.Macro",
+				macro
+			});
+		}
+	});
+}
+
 function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 	let newItem = document.createElement("div");
 	newItem.classList.add("macro-item");
@@ -75,7 +86,7 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 	let editBtn = document.createElement('button');
 	editBtn.innerHTML = `<img src="./assets/edit.svg" alt="Edit" width="20" height="20"></img>`;
 	editBtn.onclick = () => {
-		app.currentMacro = macro.id;
+		app.currentMacroId = macro.id;
 		app.view = "event-list";
 		updateGlobal();
 		render();
@@ -85,9 +96,10 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 	deleteBtn.onclick = () => {
 		macros = macros.filter((ele) => ele.id !== macro.id);
 		app.view = "macro-list";
-		if (macros.length == 0 || macro.id === app.currentMacro) {
-			app.currentMacro = -1;
+		if (macros.length == 0 || macro.id === app.currentMacroId) {
+			app.currentMacroId = -1;
 		}
+		stopMacro(macro);
 		updateGlobal();
 		render();
 	};
@@ -140,17 +152,20 @@ function addEventItem(eventList: HTMLElement, event: MacroEvent) {
 	let newItem = document.createElement("div");
 	newItem.classList.add("macro-item");
 	newItem.innerHTML = `
-<input name="select-name" class="macro-item-name" value="${getEventName(event)}"></input>
 <select name="select-type">
 	<option value="id">Id</option>
 	<option value="class">Class</option>
 	<option value="text">Text</option>
 </select>
-<input name="click-count" class="click-count" type="number" value="${event.clickCount}" />
-<select name="button">
+<input name="select-name" class="macro-item-name" value="${getEventName(event)}"/>
+<input name="click-count" class="click-count" type="number" value="${event.clickCount}" title="Click count" />
+<select name="button" title="Mouse button">
 	<option value="left">Left</option>
 	<option value="right">Right</option>
 </select>
+<button class="delete-event">
+	<img src="./assets/trash.svg" alt="Delete" width="20" height="20" />
+</button>
 `;
 	let inputName = newItem.getElementsByClassName("macro-item-name").item(0) as HTMLInputElement;
 	inputName.addEventListener('blur', () => {
@@ -203,6 +218,16 @@ function addEventItem(eventList: HTMLElement, event: MacroEvent) {
 		event.button = (ev.target as HTMLSelectElement).value as typeof event.button;
 	});
 
+	let deleteBtn = newItem.getElementsByClassName("delete-event").item(0) as HTMLButtonElement;
+	deleteBtn.addEventListener('click', () => {
+		let index = macros.findIndex((ele) => ele.id == app.currentMacroId);
+		let events = macros[index].events;
+		macros[index].events = events.filter((ele) => ele.id != event.id);
+
+		updateGlobal();
+		render();
+	});
+
 	eventList.appendChild(newItem);
 }
 
@@ -212,7 +237,7 @@ function viewEventList() {
 	element.innerHTML = `
 <div class="create-macro">
 	<div class="create-macro-btn-holder">
-		${app.currentMacro === -1 ?
+		${app.currentMacroId === -1 ?
 			`<button id="new-macro">New Macro</button>` :
 			`<button id="pickup-btn">Pickup</button><button id="stop-btn">Stop</button>`
 		}
@@ -221,7 +246,7 @@ function viewEventList() {
 	</div>
 </div>
 `;
-	if (app.currentMacro == -1) {
+	if (app.currentMacroId == -1) {
 		document.getElementById("new-macro").addEventListener('click', () => {
 			app.createIdx++;
 			macros.push({
@@ -231,12 +256,12 @@ function viewEventList() {
 				events: [],
 			});
 			app.view = "event-list";
-			app.currentMacro = app.createIdx;
+			app.currentMacroId = app.createIdx;
 			updateGlobal();
 			render();
 		});
 	} else {
-		const currentMacroIdx = macros.findIndex((ele) => ele.id === app.currentMacro);
+		const currentMacroIdx = macros.findIndex((ele) => ele.id === app.currentMacroId);
 		if (currentMacroIdx != -1) {
 			const eventsList = document.getElementById("events-list");
 			for (const event of macros[currentMacroIdx].events) {
@@ -255,8 +280,9 @@ function viewEventList() {
 		});
 
 		document.getElementById("stop-btn").addEventListener('click', () => {
-			app.currentMacro = -1;
+			app.currentMacroId = -1;
 			app.view = "macro-list";
+
 			updateGlobal();
 			render();
 		});

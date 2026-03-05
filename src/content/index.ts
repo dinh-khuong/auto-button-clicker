@@ -9,36 +9,33 @@ var macros: Array<Macro> = [];
 // };
 
 function updateData(callback: () => void) {
-  chrome.storage.local.get(["macros", "app"], (result) => {
+  chrome.storage.local.get(["macros"], (result) => {
     if (result.macros) {
       //@ts-ignore
       macros = result.macros;
     }
-    if (result.app) {
-      //@ts-ignore
-      app = result.app;
-    }
+    // if (result.app) {
+    //   //@ts-ignore
+    //   app = result.app;
+    // }
 
     callback();
   });
 }
 
 updateData(() => {
-  console.log(macros);
+  console.log("Run macro", macros);
   macros.filter((ele) => ele.active).forEach(runMacro);
 });
 
-var stopingId = -1;
+var stopingIds = [];
 
 function runMacro(macro: Macro) {
-  function oneEvent(index: number, prevIdx: number) {
-    // if (index == 0) {
-    //   console.log("macro start", macro);
-    // }
+  console.log("Run macro", macros);
 
-    if (macro.id === stopingId) {
-      stopingId = -1;
-      console.log("macro stop", macro);
+  function oneEvent(index: number, prevIdx: number) {
+    if (stopingIds.includes(macro.id)) {
+      stopingIds = stopingIds.filter((ele) => ele !== macro.id);
       return;
     }
 
@@ -58,7 +55,7 @@ function runMacro(macro: Macro) {
         }, 500);
       },
       failed: () => {
-        if (index == prevIdx) {
+        if (index === prevIdx) {
           dettachDebugger();
         }
         setTimeout(() => {
@@ -114,7 +111,7 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
       runMacro(message.macro);
       break;
     case "stop.Macro":
-      stopingId = message.macro.id;
+      stopingIds.push(message.macro.id);
       break;
   }
 })
@@ -134,7 +131,7 @@ function addNewMacro(event: PointerEvent) {
     text: currentElement.textContent.length < 128 ? currentElement.textContent : "",
     className: eleClasses,
     clickCount: 1,
-    button: "left",
+    button: event.button == 0 ? "left" : "right",
     index: 0,
   };
 

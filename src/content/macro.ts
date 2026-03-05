@@ -16,7 +16,7 @@ export type Macro = {
 };
 
 export type App = {
-  currentMacro: number,
+  currentMacroId: number,
   view: "macro-list" | "event-list",
   createIdx: number,
 };

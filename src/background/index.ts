@@ -4,7 +4,7 @@ console.log("Background runing")
 
 var macros: Array<Macro> = [];
 var app: App = {
-  currentMacro: -1,
+  currentMacroId: -1,
   view: "macro-list",
   createIdx: 0,
 };
@@ -106,17 +106,17 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
       clickMouse(tabId, message);
       break;
     case "debug.attach":
-      console.log("Prevous: attach debugger");
+      // console.log("Prevous: attach debugger");
       attachToTab(tabId);
       break;
     case "debug.detach":
-      console.log("Prevous: detach debugger");
+      // console.log("Prevous: detach debugger");
       deatchToTab(tabId);
       break;
     case "popup.MacroEvent":
       updateData(() => {
-        if (app.currentMacro !== -1) {
-          const index = macros.findIndex((ele) => ele.id === app.currentMacro);
+        if (app.currentMacroId !== -1) {
+          const index = macros.findIndex((ele) => ele.id === app.currentMacroId);
           if (index !== -1) {
             macros[index].events.push(message.macro);
             updateGlobal();
