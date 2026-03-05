@@ -77,40 +77,28 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 	let newItem = document.createElement("div");
 	newItem.classList.add("macro-item");
 	newItem.innerHTML = `
-<input class="macro-name" value="${macro.name}"></input>
+<div class="macro-item-name-holder">
+	<button>
+		${macro.active ?
+			`<img src="./assets/pause.svg" alt="Pause" width="20" height="20"></img>` :
+			`<img src="./assets/play.svg" alt="Play" width="20" height="20"></img>`
+		}
+	</button>
+	<input name="macro-name" class="macro-name" value="${macro.name}"></input>
+</div>
+<div class="macro-item-btn-holder">
+	<button><img src="./assets/edit.svg" alt="Edit" width="20" height="20"></img></button>
+	<button><img src="./assets/trash.svg" alt="Edit" width="20" height="20"></img></button>
+
+</div>
 `;
 	(newItem.getElementsByClassName("macro-name").item(0) as HTMLInputElement).addEventListener('change', (event) => {
 		macro.name = (event.target as HTMLInputElement).value;
 		updateGlobal();
 	});
-	let editBtn = document.createElement('button');
-	editBtn.innerHTML = `<img src="./assets/edit.svg" alt="Edit" width="20" height="20"></img>`;
-	editBtn.onclick = () => {
-		app.currentMacroId = macro.id;
-		app.view = "event-list";
-		updateGlobal();
-		render();
-	};
-	let deleteBtn = document.createElement('button');
-	deleteBtn.innerHTML = `<img src="./assets/trash.svg" alt="Delete" width="20" height="20"></img>`;
-	deleteBtn.onclick = () => {
-		macros = macros.filter((ele) => ele.id !== macro.id);
-		app.view = "macro-list";
-		if (macros.length == 0 || macro.id === app.currentMacroId) {
-			app.currentMacroId = -1;
-		}
-		stopMacro(macro);
-		updateGlobal();
-		render();
-	};
 
-	let playBtn = document.createElement('button');
-	playBtn.innerHTML = `${macro.active ?
-		`<img src="./assets/pause.svg" alt="Pause" width="20" height="20"></img>` :
-		`<img src="./assets/play.svg" alt="Play" width="20" height="20"></img>`
-		}`;
-
-	playBtn.onclick = () => {
+	const functionBtns = newItem.getElementsByTagName("button");
+	functionBtns.item(0).onclick = () => {
 		macro.active = !macro.active;
 		app.view = "macro-list";
 		chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
@@ -131,9 +119,24 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 		render();
 	};
 
-	newItem.appendChild(playBtn);
-	newItem.appendChild(editBtn);
-	newItem.appendChild(deleteBtn);
+	functionBtns.item(1).onclick = () => {
+		app.currentMacroId = macro.id;
+		app.view = "event-list";
+		updateGlobal();
+		render();
+	}
+
+	functionBtns.item(2).onclick = () => {
+		macros = macros.filter((ele) => ele.id !== macro.id);
+		app.view = "macro-list";
+		if (macros.length == 0 || macro.id === app.currentMacroId) {
+			app.currentMacroId = -1;
+		}
+		stopMacro(macro);
+		updateGlobal();
+		render();
+	}
+
 	macrosList.appendChild(newItem);
 }
 

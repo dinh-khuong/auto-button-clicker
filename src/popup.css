@@ -76,8 +76,12 @@ input[type="number"] {
 	background-color: var(--blue-normal);
 	display: flex;
 	flex-direction: row;
-	gap: 3px;
+	justify-content: space-between;
 
+	.macro-item-name-holder {
+		display: flex;
+		gap: 3px;
+	}
 	.macro-item-name {
 		width: 150px;
 		text-overflow: ellipsis;
@@ -85,6 +89,12 @@ input[type="number"] {
 
 	.click-count {
 		width: 10px;
+	}
+
+	.macro-item-btn-holder {
+		display: flex;
+		flex-direction: row;
+		gap: 3px;
 	}
 }
 
