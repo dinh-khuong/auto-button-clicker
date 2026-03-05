@@ -39,7 +39,7 @@ input[type="number"] {
 }
 
 #main-body {
-	width: 335px;
+	width: 360px;
 	h1 {
 		text-align: center;
 	}
@@ -54,6 +54,7 @@ input[type="number"] {
 
 .header-item {
 	border: 1px solid var(--blue-bright);
+	padding: 2px;
 }
 
 .header-item:hover {
@@ -72,11 +73,22 @@ input[type="number"] {
 	gap: 5px;
 }
 
-.macro-item {
+.macro-event-item {
 	background-color: var(--blue-normal);
 	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
+	flex-direction: column;
+	gap: 2px;
+
+	.macro-event-condition {
+		display: flex;
+		justify-content: center;
+		gap: 3px;
+	}
+
+	.macro-event-button {
+		display: flex;
+		flex-direction: row;
+	}
 
 	.macro-item-name-holder {
 		display: flex;
@@ -98,6 +110,20 @@ input[type="number"] {
 	}
 }
 
+.macro-item {
+	display: flex;
+	background-color: var(--blue-normal);
+	justify-content: space-between;
+	.macro-item-name-holder {
+		display: flex;
+		gap: 3px;
+	}
+
+	.macro-item-btn-holder {
+		display: flex;
+		gap: 3px;
+	}
+}
 
 .create-macro {
 	.create-macro-btn-holder {

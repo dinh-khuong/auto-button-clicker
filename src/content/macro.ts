@@ -1,3 +1,13 @@
+
+export type EventCondition = {
+  type: "class" | "id" | "text",
+  id: string,
+  className: string,
+  text: string,
+  checker: "exist" | "non-exist",
+  index: number,
+};
+
 export type MacroEvent = {
   type: "class" | "id" | "text",
   id: string,
@@ -6,6 +16,7 @@ export type MacroEvent = {
   index: number,
   clickCount: number,
   button: "left" | "right",
+  condition: EventCondition | null,
 };
 
 export type Macro = {

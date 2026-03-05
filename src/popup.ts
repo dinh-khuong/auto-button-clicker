@@ -1,4 +1,4 @@
-import type { Macro, MacroEvent, App } from "./content/macro";
+import type { Macro, MacroEvent, App, EventCondition } from "./content/macro";
 
 var macros: Array<Macro> = [];
 var app: App = {
@@ -58,7 +58,7 @@ function viewMacroList() {
 
 	const macroList = document.getElementById("macro-list");
 	for (const macro of macros) {
-		addMacroItem(macroList, macro);
+		viewMacroItem(macroList, macro);
 	}
 }
 
@@ -73,7 +73,7 @@ function stopMacro(macro: Macro) {
 	});
 }
 
-function addMacroItem(macrosList: HTMLElement, macro: Macro) {
+function viewMacroItem(macrosList: HTMLElement, macro: Macro) {
 	let newItem = document.createElement("div");
 	newItem.classList.add("macro-item");
 	newItem.innerHTML = `
@@ -140,7 +140,7 @@ function addMacroItem(macrosList: HTMLElement, macro: Macro) {
 	macrosList.appendChild(newItem);
 }
 
-function getEventName(event: MacroEvent) {
+function getEventName(event: MacroEvent | EventCondition) {
 	switch (event.type) {
 		case "id":
 			return event.id;
@@ -151,25 +151,108 @@ function getEventName(event: MacroEvent) {
 	}
 }
 
-function addEventItem(eventList: HTMLElement, event: MacroEvent) {
-	let newItem = document.createElement("div");
-	newItem.classList.add("macro-item");
-	newItem.innerHTML = `
-<select name="select-type">
+function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: number) {
+	if (event.condition) {
+		conditionItem.innerHTML = `
+<select name="condition-event-type" class="condition-event-type">
 	<option value="id">Id</option>
 	<option value="class">Class</option>
 	<option value="text">Text</option>
 </select>
-<input name="select-name" class="macro-item-name" value="${getEventName(event)}"/>
-<input name="click-count" class="click-count" type="number" value="${event.clickCount}" title="Click count" />
-<select name="button" title="Mouse button">
-	<option value="left">Left</option>
-	<option value="right">Right</option>
+<input name="condition-event-name" value="${getEventName(event.condition)}" class="condition-event-name"></input>
+<select name="condition-checker-type" class="condition-checker-type">
+	<option value="exist">Exist</option>
+	<option value="non-exist">Non-exist</option>
 </select>
-<button class="delete-event">
-	<img src="./assets/trash.svg" alt="Delete" width="20" height="20" />
-</button>
+<button class="condition-delete"><img src="./assets/trash.svg" alt="Delete" width="20" height="20" /></button>
 `;
+		let conditionType = conditionItem.querySelector(".condition-event-type") as HTMLSelectElement;
+		let eventName = conditionItem.querySelector(".condition-event-name") as HTMLInputElement;
+		let checkerType = conditionItem.querySelector(".condition-checker-type") as HTMLSelectElement;
+		let deleteBtn = conditionItem.querySelector(".condition-delete") as HTMLButtonElement;
+		console.log("Condition ",event.condition);
+
+		conditionType.value = event.condition.type;
+		checkerType.value = event.condition.checker;
+
+		function updateRender() {
+			updateGlobal();
+			render();
+		}
+
+		conditionType.addEventListener('change', (ev) => {
+			event.condition.type = (ev.target as HTMLSelectElement).value as typeof event.condition.type;
+			updateRender();
+		});
+
+		eventName.onblur = () => {
+			switch (event.condition.type) {
+				case "class":
+					event.condition.className = eventName.value;
+					break;
+				case "id":
+					event.condition.id = eventName.value;
+					break;
+				case "text":
+					event.condition.text = eventName.value;
+					break;
+			}
+			updateRender();
+		};
+		checkerType.onchange = (ev) => {
+			event.condition.checker = (ev.target as HTMLSelectElement).value as typeof event.condition.checker;
+			updateRender();
+		};
+
+		deleteBtn.onclick = () => {
+			event.condition = null;
+			updateRender();
+		};
+	} else {
+		conditionItem.innerHTML = `
+<button class="macro-event-add-condition"><img src="./assets/plus.svg" alt="Add" width="20" height="20"></img></button>
+`;
+		(conditionItem.getElementsByClassName("macro-event-add-condition").item(0) as HTMLButtonElement).onclick = () => {
+			updateGlobal();
+			chrome.tabs.query({ active: true, currentWindow: true },
+				(tabs) => {
+					const currentTab = tabs[0];
+					chrome.tabs.sendMessage(currentTab.id, {
+						type: "pickup.Condition",
+						eventIdx: index,
+					});
+				}
+			);
+		}
+	}
+}
+
+function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: number) {
+	let newItem = document.createElement("div");
+	newItem.classList.add("macro-event-item");
+	newItem.innerHTML = `
+<div class="macro-event-condition">
+</div>
+<div class="macro-event-button">
+	<select name="select-type" class="select-type">
+		<option value="id">Id</option>
+		<option value="class">Class</option>
+		<option value="text">Text</option>
+	</select>
+	<input name="select-name" class="macro-item-name" value="${getEventName(event)}"></input>
+	<input name="click-count" class="click-count" type="number" value="${event.clickCount}" title="Click count" />
+	<select name="button" title="Mouse button">
+		<option value="left">Left</option>
+		<option value="right">Right</option>
+	</select>
+	<button class="delete-event">
+		<img src="./assets/trash.svg" alt="Delete" width="20" height="20" />
+	</button>
+</div>
+`;
+	const conditionElement = newItem.getElementsByClassName("macro-event-condition").item(0);
+	viewConditionEvent(conditionElement, event, eventIdx);
+
 	let inputName = newItem.getElementsByClassName("macro-item-name").item(0) as HTMLInputElement;
 	inputName.addEventListener('blur', () => {
 		switch (event.type) {
@@ -188,7 +271,7 @@ function addEventItem(eventList: HTMLElement, event: MacroEvent) {
 		render();
 	})
 
-	const selectElements = newItem.getElementsByTagName("select");
+	const selectElements = newItem.querySelector(".macro-event-button").getElementsByTagName("select");
 	let typeSelect = selectElements.item(0);
 	typeSelect.value = event.type;
 	typeSelect.addEventListener('change', (_) => {
@@ -199,7 +282,7 @@ function addEventItem(eventList: HTMLElement, event: MacroEvent) {
 	});
 
 	let mouseClick = newItem.getElementsByClassName("click-count").item(0) as HTMLInputElement;
-	mouseClick.addEventListener('change', (ev) => {
+	mouseClick.addEventListener('change', () => {
 		let value = mouseClick.valueAsNumber;
 		if (value < 0) {
 			value = 0;
@@ -267,9 +350,9 @@ function viewEventList() {
 		const currentMacroIdx = macros.findIndex((ele) => ele.id === app.currentMacroId);
 		if (currentMacroIdx != -1) {
 			const eventsList = document.getElementById("events-list");
-			for (const event of macros[currentMacroIdx].events) {
-				addEventItem(eventsList, event);
-			}
+			macros[currentMacroIdx].events.forEach((event, idx) => {
+				viewEventItem(eventsList, event, idx);
+			});
 		}
 		document.getElementById("pickup-btn").addEventListener('click', () => {
 			chrome.tabs.query({ active: true, currentWindow: true },

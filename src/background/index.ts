@@ -113,17 +113,17 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
       // console.log("Prevous: detach debugger");
       deatchToTab(tabId);
       break;
-    case "popup.MacroEvent":
-      updateData(() => {
-        if (app.currentMacroId !== -1) {
-          const index = macros.findIndex((ele) => ele.id === app.currentMacroId);
-          if (index !== -1) {
-            macros[index].events.push(message.macro);
-            updateGlobal();
-          }
-        }
-      });
-      break;
+    // case "popup.MacroEvent":
+    //   updateData(() => {
+    //     if (app.currentMacroId !== -1) {
+    //       const index = macros.findIndex((ele) => ele.id === app.currentMacroId);
+    //       if (index !== -1) {
+    //         macros[index].events.push(message.macro);
+    //         updateGlobal();
+    //       }
+    //     }
+    //   });
+      // break;
   }
 })
 

@@ -1,6 +1,6 @@
-import type { MacroEvent } from "./macro";
+import type { MacroEvent, EventCondition } from "./macro";
 
-function getElement(event: MacroEvent) {
+function getElement(event: MacroEvent | EventCondition) {
   switch (event.type) {
     case "id":
       return document.getElementById(event.id);
@@ -26,6 +26,14 @@ function getElement(event: MacroEvent) {
 }
 
 async function clickElement({ event, success, failed, }: { event: MacroEvent, success: () => void, failed: () => void }) {
+  if (event.condition) {
+    let element = getElement(event.condition);
+    if (!(element && event.condition.checker === "exist" || !element && event.condition.checker === "non-exist")) {
+      failed();
+      return;
+    }
+  }
+
   const element = getElement(event);
 
   if (element) {

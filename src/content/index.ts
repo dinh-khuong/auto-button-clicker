@@ -1,29 +1,33 @@
 import { clickElement, dettachDebugger } from './perform';
-import { type MacroEvent, type Macro } from './macro';
+import { type MacroEvent, type Macro, type EventCondition, type App } from './macro';
 
 var macros: Array<Macro> = [];
-// var app: App = {
-//   createIdx: 0,
-//   view: "macro-list",
-//   currentMacro: -1,
-// };
+var app: App = {
+  createIdx: 0,
+  view: "macro-list",
+  currentMacroId: -1,
+};
 
-function updateData(callback: () => void) {
-  chrome.storage.local.get(["macros"], (result) => {
+function updateGlobal(callback: () => void) {
+  chrome.storage.local.get(["macros", "app"], (result) => {
     if (result.macros) {
       //@ts-ignore
       macros = result.macros;
     }
-    // if (result.app) {
-    //   //@ts-ignore
-    //   app = result.app;
-    // }
+    if (result.app) {
+      //@ts-ignore
+      app = result.app;
+    }
 
     callback();
   });
 }
 
-updateData(() => {
+function setData() {
+  chrome.storage.local.set({macros, app});
+}
+
+updateGlobal(() => {
   console.log("Run macro", macros);
   macros.filter((ele) => ele.active).forEach(runMacro);
 });
@@ -105,7 +109,22 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
     case "pickup.Element":
       document.addEventListener('mouseover', drawBoundingBox, { passive: true });
       document.addEventListener('click', addNewMacro, { passive: true });
-      updateData(() => { });
+      updateGlobal(() => { });
+      break;
+    case "pickup.Condition":
+      document.addEventListener('mouseover', drawBoundingBox, { passive: true });
+
+      function addNewCondition(event: PointerEvent) {
+        if (!event.target) {
+          return;
+        }
+        _addNewCondition(event, message.eventIdx);
+
+        document.removeEventListener('mouseover', drawBoundingBox);
+        document.removeEventListener('click', addNewCondition);
+      }
+      document.addEventListener('click', addNewCondition, { passive: true });
+      updateGlobal(() => { });
       break;
     case "play.Macro":
       runMacro(message.macro);
@@ -115,6 +134,34 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
       break;
   }
 })
+
+function _addNewCondition(event: PointerEvent, eventIdx: number) {
+  const currentElement = event.target as HTMLElement;
+  const eleId = currentElement.id;
+  const eleClasses = currentElement.classList.toString();
+
+  let eventCondition: EventCondition = {
+    type: "class",
+    id: eleId,
+    className: eleClasses,
+    text: currentElement.textContent.length < 128 ? currentElement.textContent : "",
+    index: 0,
+    checker: "exist",
+  };
+
+  boxElement.style.width = "0"
+  boxElement.style.height = "0";
+  boxElement.style.left = "0";
+  boxElement.style.top = "0";
+
+  if (app.currentMacroId !== -1) {
+    const macroIdx = macros.findIndex((ele) => ele.id === app.currentMacroId);
+    if (macroIdx !== -1) {
+      macros[macroIdx].events[eventIdx].condition = eventCondition;
+      setData();
+    }
+  }
+}
 
 function addNewMacro(event: PointerEvent) {
   if (!event.target) {
@@ -126,13 +173,14 @@ function addNewMacro(event: PointerEvent) {
   const eleClasses = currentElement.classList.toString();
 
   let macroEvent: MacroEvent = {
-    id: eleId,
     type: "class",
-    text: currentElement.textContent.length < 128 ? currentElement.textContent : "",
+    id: eleId,
     className: eleClasses,
+    text: currentElement.textContent.length < 128 ? currentElement.textContent : "",
+    index: 0,
     clickCount: 1,
     button: event.button == 0 ? "left" : "right",
-    index: 0,
+    condition: null,
   };
 
   const candidates = document.getElementsByClassName(eleClasses);
@@ -148,11 +196,18 @@ function addNewMacro(event: PointerEvent) {
   boxElement.style.left = "0";
   boxElement.style.top = "0";
 
-  chrome.runtime.sendMessage({
-    type: "popup.MacroEvent",
-    macro: macroEvent,
-  })
+  if (app.currentMacroId !== -1) {
+    const index = macros.findIndex((ele) => ele.id === app.currentMacroId);
+    if (index !== -1) {
+      macros[index].events.push(macroEvent);
+      updateGlobal(() => { });
+    }
+  }
 
+  // chrome.runtime.sendMessage({
+  //   type: "popup.MacroEvent",
+  //   macro: macroEvent,
+  // })
   // console.log("New event: ", macroEvent);
   document.removeEventListener('mouseover', drawBoundingBox);
   document.removeEventListener('click', addNewMacro);
