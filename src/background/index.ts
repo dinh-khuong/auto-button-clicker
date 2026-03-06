@@ -71,8 +71,6 @@ function clickMouse(tabId: number, message: any) {
   const button = message.button;
   const clickCount = message.clickCount;
 
-  // console.log("Mouse click on: ", position)
-  // console.log("Mouse Pressed");
   chrome.debugger.sendCommand({ tabId }, "Input.dispatchMouseEvent", {
     type: 'mousePressed',
     x: position.x,
@@ -89,7 +87,7 @@ function clickMouse(tabId: number, message: any) {
         button,
         clickCount,
       })
-    }, 100);
+    }, 200);
   });
 }
 
@@ -113,17 +111,6 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
       // console.log("Prevous: detach debugger");
       deatchToTab(tabId);
       break;
-    // case "popup.MacroEvent":
-    //   updateData(() => {
-    //     if (app.currentMacroId !== -1) {
-    //       const index = macros.findIndex((ele) => ele.id === app.currentMacroId);
-    //       if (index !== -1) {
-    //         macros[index].events.push(message.macro);
-    //         updateGlobal();
-    //       }
-    //     }
-    //   });
-    // break;
   }
 })
 

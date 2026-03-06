@@ -35,7 +35,7 @@ updateGlobal(() => {
 var stopingIds = [];
 
 function runMacro(macro: Macro) {
-  console.log("Run macro", macros);
+  // console.log("Run macro", macros);
 
   function oneEvent(index: number, prevIdx: number) {
     if (stopingIds.includes(macro.id)) {

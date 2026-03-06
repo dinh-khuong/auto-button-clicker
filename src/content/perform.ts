@@ -37,14 +37,10 @@ async function clickElement({ event, success, failed, }: { event: MacroEvent, su
   const element = getElement(event);
 
   if (element) {
-    // console.log("Click", element);
-    await chrome.runtime.sendMessage({
-      type: "debug.attach",
-    });
+    await attachDebugger();
 
     const rect = element.getBoundingClientRect();
 
-    console.log("Click", element);
     await chrome.runtime.sendMessage({
       type: "click",
       position: {
@@ -72,11 +68,17 @@ function checkQuerries(querries: Array<string>) {
   return true;
 }
 
-function dettachDebugger() {
-  chrome.runtime.sendMessage({
+async function dettachDebugger() {
+  await chrome.runtime.sendMessage({
     type: "debug.detach",
   });
 }
 
-export { clickElement, dettachDebugger, checkQuerries };
+async function attachDebugger() {
+  await chrome.runtime.sendMessage({
+    type: "debug.attach",
+  });
+}
+
+export { clickElement, attachDebugger, dettachDebugger, checkQuerries };
 
