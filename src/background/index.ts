@@ -15,7 +15,7 @@ if (false) {
   });
 }
 
-function updateData(callback: () => void) {
+function getData(callback: () => void) {
   chrome.storage.local.get(["macros", "app"], (result) => {
     if (result.macros) {
       //@ts-ignore
@@ -29,9 +29,10 @@ function updateData(callback: () => void) {
     callback();
   });
 }
-updateData(() => { });
 
-function updateGlobal() {
+getData(() => { });
+
+function setData() {
   chrome.storage.local.set({ macros, app }, () => {
     console.log("Save data", macros, app);
   });
@@ -47,7 +48,7 @@ function attachToTab(tabId: number) {
 
   Reflect.set(tabs, tabId, true);
 
-  chrome.debugger.attach({ tabId: tabId }, protocolVersion, () => {
+  chrome.debugger.attach({ tabId }, protocolVersion, () => {
     if (chrome.runtime.lastError) {
       console.error(chrome.runtime.lastError.message);
       return;
