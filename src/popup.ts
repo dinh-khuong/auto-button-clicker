@@ -7,8 +7,8 @@ var app: App = {
   currentMacroId: -1,
 };
 
-function updateGlobal() {
-  chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+function setData() {
+  chrome.tabs.query({ }, (tabs) => {
     for (const tab of tabs) {
       macros.filter(ele => ele.active).forEach(macro => {
         chrome.tabs.sendMessage(tab.id, {
@@ -109,7 +109,7 @@ function viewMacroItem(macrosList: HTMLElement, macro: Macro) {
 `;
   (newItem.getElementsByClassName("macro-name").item(0) as HTMLInputElement).addEventListener('change', (event) => {
     macro.name = (event.target as HTMLInputElement).value;
-    updateGlobal();
+    setData();
   });
 
   const functionBtns = newItem.getElementsByTagName("button");
@@ -130,14 +130,14 @@ function viewMacroItem(macrosList: HTMLElement, macro: Macro) {
         })
       }
     });
-    updateGlobal();
+    setData();
     render();
   };
 
   functionBtns.item(1).onclick = () => {
     app.currentMacroId = macro.id;
     app.view = "event-list";
-    updateGlobal();
+    setData();
     render();
   }
 
@@ -148,7 +148,7 @@ function viewMacroItem(macrosList: HTMLElement, macro: Macro) {
       app.currentMacroId = -1;
     }
     stopMacro(macro);
-    updateGlobal();
+    setData();
     render();
   }
 
@@ -191,7 +191,7 @@ function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: nu
     checkerType.value = event.condition.checker;
 
     function updateRender() {
-      updateGlobal();
+      setData();
       render();
     }
 
@@ -228,7 +228,7 @@ function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: nu
 <button class="macro-event-add-condition"><img src="./assets/plus.svg" alt="Add" width="20" height="20"></img></button>
 `;
     (conditionItem.getElementsByClassName("macro-event-add-condition").item(0) as HTMLButtonElement).onclick = () => {
-      updateGlobal();
+      setData();
       chrome.tabs.query({ active: true, currentWindow: true },
         (tabs) => {
           const currentTab = tabs[0];
@@ -282,7 +282,7 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
         break;
     }
 
-    updateGlobal();
+    setData();
     render();
   })
 
@@ -292,7 +292,7 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
   typeSelect.addEventListener('change', (_) => {
     event.type = typeSelect.value as typeof event.type;
 
-    updateGlobal();
+    setData();
     render();
   });
 
@@ -309,7 +309,7 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
   });
 
   mouseClick.addEventListener('blur', () => {
-    updateGlobal();
+    setData();
     render();
   })
 
@@ -325,7 +325,7 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
     let events = macros[macroIdx].events;
     macros[macroIdx].events = events.filter((ele) => ele.eventId !== event.eventId);
 
-    updateGlobal();
+    setData();
     render();
   });
 
@@ -340,7 +340,7 @@ function viewEventList() {
   <div class="create-macro-btn-holder">
     ${app.currentMacroId === -1 ?
       `<button id="new-macro">New Macro</button>` :
-      `<button id="pickup-btn">Pickup</button><button id="stop-btn">Stop</button>`
+      `<button id="pickup-btn">Capture</button><button id="stop-btn">Cancel</button>`
     }
   </div>
   <div id="events-list" class="column-list">
@@ -358,7 +358,7 @@ function viewEventList() {
       });
       app.view = "event-list";
       app.currentMacroId = macros[macros.length - 1].id;
-      updateGlobal();
+      setData();
       render();
     });
   } else {
@@ -384,7 +384,7 @@ function viewEventList() {
       app.currentMacroId = -1;
       app.view = "macro-list";
 
-      updateGlobal();
+      setData();
       render();
     });
   }
