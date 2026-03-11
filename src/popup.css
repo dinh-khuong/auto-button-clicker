@@ -130,7 +130,7 @@ button:disabled {
   gap: 2px;
   padding: 3px 0;
   border-radius: 2px;
-  transition: linear 0.3s;
+  transition: cubic-bezier(1, 0, 0, 1) 0.3s;
 
   .macro-event-condition {
     display: flex;
@@ -177,6 +177,12 @@ button:disabled {
 
 .macro-event-item-down {
   transform: translateY(80px);
+}
+
+.macro-event-item-on-top {
+  background-color: var(--blue-bright);
+  position: relative;
+  z-index: 100;
 }
 
 .macro-item {

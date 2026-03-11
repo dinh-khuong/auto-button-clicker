@@ -7,6 +7,12 @@ var app: App = {
   currentMacroId: -1,
 };
 
+function swapArrayIdx<T>(array: Array<T>, idx1: number, idx2: number) {
+  const temp = array[idx1];
+  array[idx1] = array[idx2];
+  array[idx2] = temp;
+}
+
 function setData() {
   chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs) {
@@ -345,16 +351,14 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
       return;
     }
     let events = macros[currentMacroIdx].events;
-    let removed = events.splice(eventIdx, 1);
-    events.splice(eventIdx - 1, 0, ...removed);
-    macros[currentMacroIdx].events = events;
+    swapArrayIdx(events, eventIdx, eventIdx - 1);
 
-    newItem.classList.add("macro-event-item-up");
+    newItem.classList.add("macro-event-item-up", "macro-event-item-on-top");
     const prevEventEle = document.getElementsByClassName("macro-event-item").item(eventIdx - 1);
     prevEventEle.classList.add("macro-event-item-down");
 
     setTimeout(() => {
-      newItem.classList.remove("macro-event-item-up");
+      newItem.classList.remove("macro-event-item-up", "macro-event-item-on-top");
       prevEventEle.classList.remove("macro-event-item-down");
 
       setData();
@@ -366,16 +370,14 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
       return;
     }
     let events = macros[currentMacroIdx].events;
-    let removed = events.splice(eventIdx, 1);
-    events.splice(eventIdx + 1, 0, ...removed);
-    macros[currentMacroIdx].events = events;
+    swapArrayIdx(events, eventIdx, eventIdx + 1);
 
-    newItem.classList.add("macro-event-item-down");
+    newItem.classList.add("macro-event-item-down", "macro-event-item-on-top");
     const nextEventEle = document.getElementsByClassName("macro-event-item").item(eventIdx + 1);
     nextEventEle.classList.add("macro-event-item-up");
 
     setTimeout(() => {
-      newItem.classList.remove("macro-event-item-down");
+      newItem.classList.remove("macro-event-item-down", "macro-event-item-on-top");
       nextEventEle.classList.remove("macro-event-item-up");
       setData();
       render();
