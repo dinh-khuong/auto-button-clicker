@@ -197,4 +197,8 @@ button:disabled {
   }
 }
 
+.move-event-up-down {
+  display: flex;
+  flex-direction: column;
+}
 
