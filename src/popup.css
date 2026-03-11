@@ -130,7 +130,7 @@ button:disabled {
   gap: 2px;
   padding: 3px 0;
   border-radius: 2px;
-  transition: cubic-bezier(1, 0, 0, 1) 0.3s;
+  transition: cubic-bezier(0.1, 0.7, 1.0, 0.1) 0.3s;
 
   .macro-event-condition {
     display: flex;
