@@ -349,8 +349,17 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
     events.splice(eventIdx - 1, 0, ...removed);
     macros[currentMacroIdx].events = events;
 
-    setData();
-    render();
+    newItem.classList.add("macro-event-item-up");
+    const prevEventEle = document.getElementsByClassName("macro-event-item").item(eventIdx - 1);
+    prevEventEle.classList.add("macro-event-item-down");
+
+    setTimeout(() => {
+      newItem.classList.remove("macro-event-item-up");
+      prevEventEle.classList.remove("macro-event-item-down");
+
+      setData();
+      render();
+    }, 400);
   };
   moveDownBtn.onclick = (_e) => {
     if (eventIdx === macros[currentMacroIdx].events.length - 1) {
@@ -361,8 +370,16 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
     events.splice(eventIdx + 1, 0, ...removed);
     macros[currentMacroIdx].events = events;
 
-    setData();
-    render();
+    newItem.classList.add("macro-event-item-down");
+    const nextEventEle = document.getElementsByClassName("macro-event-item").item(eventIdx + 1);
+    nextEventEle.classList.add("macro-event-item-up");
+
+    setTimeout(() => {
+      newItem.classList.remove("macro-event-item-down");
+      nextEventEle.classList.remove("macro-event-item-up");
+      setData();
+      render();
+    }, 400);
   };
 
   eventList.appendChild(newItem);
