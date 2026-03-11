@@ -8,7 +8,7 @@ var app: App = {
 };
 
 function setData() {
-  chrome.tabs.query({ }, (tabs) => {
+  chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs) {
       macros.filter(ele => ele.active).forEach(macro => {
         chrome.tabs.sendMessage(tab.id, {
@@ -185,7 +185,7 @@ function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: nu
     let eventName = conditionItem.querySelector(".condition-event-name") as HTMLInputElement;
     let checkerType = conditionItem.querySelector(".condition-checker-type") as HTMLSelectElement;
     let deleteBtn = conditionItem.querySelector(".condition-delete") as HTMLButtonElement;
-    console.log("Condition ", event.condition);
+    // console.log("Condition ", event.condition);
 
     conditionType.value = event.condition.type;
     checkerType.value = event.condition.checker;
@@ -225,7 +225,7 @@ function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: nu
     };
   } else {
     conditionItem.innerHTML = `
-<button class="macro-event-add-condition"><img src="./assets/plus.svg" alt="Add" width="20" height="20"></img></button>
+<button class="macro-event-add-condition" title="Add condition"><img src="./assets/plus.svg" alt="Add" width="20" height="20"></img></button>
 `;
     (conditionItem.getElementsByClassName("macro-event-add-condition").item(0) as HTMLButtonElement).onclick = () => {
       setData();
@@ -263,6 +263,14 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
   <button class="delete-event">
     <img src="./assets/trash.svg" alt="Delete" width="20" height="20" />
   </button>
+  <div class="move-event-up-down">
+    <button class="move-event-up" title="Move up">
+      <img src="./assets/up.svg" alt="Move up" width="8" height="8" />
+    </button>
+    <button class="move-event-down" title="Move down">
+      <img src="./assets/down.svg" alt="Move down" width="8" height="8" />
+    </button>
+  </div>
 </div>
 `;
   const conditionElement = newItem.getElementsByClassName("macro-event-condition").item(0);
@@ -328,6 +336,51 @@ function viewEventItem(eventList: HTMLElement, event: MacroEvent, eventIdx: numb
     setData();
     render();
   });
+
+  let moveUpBtn = newItem.getElementsByClassName("move-event-up").item(0) as HTMLButtonElement;
+  let moveDownBtn = newItem.getElementsByClassName("move-event-down").item(0) as HTMLButtonElement;
+  const currentMacroIdx = macros.findIndex((ele) => ele.id === app.currentMacroId);
+  moveUpBtn.onclick = (_e) => {
+    if (eventIdx === 0) {
+      return;
+    }
+    let events = macros[currentMacroIdx].events;
+    let removed = events.splice(eventIdx, 1);
+    events.splice(eventIdx - 1, 0, ...removed);
+    macros[currentMacroIdx].events = events;
+
+    newItem.classList.add("macro-event-item-up");
+    const prevEventEle = document.getElementsByClassName("macro-event-item").item(eventIdx - 1);
+    prevEventEle.classList.add("macro-event-item-down");
+
+    setTimeout(() => {
+      newItem.classList.remove("macro-event-item-up");
+      prevEventEle.classList.remove("macro-event-item-down");
+
+      setData();
+      render();
+    }, 400);
+  };
+  moveDownBtn.onclick = (_e) => {
+    if (eventIdx === macros[currentMacroIdx].events.length - 1) {
+      return;
+    }
+    let events = macros[currentMacroIdx].events;
+    let removed = events.splice(eventIdx, 1);
+    events.splice(eventIdx + 1, 0, ...removed);
+    macros[currentMacroIdx].events = events;
+
+    newItem.classList.add("macro-event-item-down");
+    const nextEventEle = document.getElementsByClassName("macro-event-item").item(eventIdx + 1);
+    nextEventEle.classList.add("macro-event-item-up");
+
+    setTimeout(() => {
+      newItem.classList.remove("macro-event-item-down");
+      nextEventEle.classList.remove("macro-event-item-up");
+      setData();
+      render();
+    }, 400);
+  };
 
   eventList.appendChild(newItem);
 }
