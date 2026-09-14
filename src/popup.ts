@@ -13,15 +13,28 @@ function swapArrayIdx<T>(array: Array<T>, idx1: number, idx2: number) {
   array[idx2] = temp;
 }
 
+function canSendMessageToTab(tab: chrome.tabs.Tab): tab is chrome.tabs.Tab & { id: number; url: string } {
+  return Boolean(tab.id && tab.url && /^(https?:|file:)/.test(tab.url));
+}
+
+function sendTabMessage(tabId: number, message: any) {
+  return chrome.tabs.sendMessage(tabId, message).catch((error) => {
+    console.warn("Unable to send message to tab", tabId, error?.message ?? error);
+  });
+}
+
 function setData() {
   chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs) {
+      if (!canSendMessageToTab(tab)) {
+        continue;
+      }
       macros.filter(ele => ele.active).forEach(macro => {
-        chrome.tabs.sendMessage(tab.id, {
+        sendTabMessage(tab.id, {
           type: "stop.Macro",
           macro,
         }).then(() => {
-          chrome.tabs.sendMessage(tab.id, {
+          sendTabMessage(tab.id, {
             type: "play.Macro",
             macro,
           });
@@ -87,7 +100,10 @@ function viewMacroList() {
 function stopMacro(macro: Macro) {
   chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs) {
-      chrome.tabs.sendMessage(tab.id, {
+      if (!canSendMessageToTab(tab)) {
+        continue;
+      }
+      sendTabMessage(tab.id, {
         type: "stop.Macro",
         macro
       });
@@ -100,21 +116,31 @@ function viewMacroItem(macrosList: HTMLElement, macro: Macro) {
   newItem.classList.add("macro-item");
   newItem.innerHTML = `
 <div class="macro-item-name-holder">
-  <button>
+  <button class="play-pause-btn">
     ${macro.active ?
       `<img src="./assets/pause.svg" alt="Pause" width="20" height="20"></img>` :
       `<img src="./assets/play.svg" alt="Play" width="20" height="20"></img>`
     }
   </button>
   <input name="macro-name" class="macro-name" value="${macro.name}"></input>
+  <select name="macro-type" class="macro-type">
+    <option value="periodic" ${macro.macroType === "periodic" && "selected"}>Periodic</option>
+    <option value="once" ${macro.macroType === "once" && "selected"}>Once</option>
+  </select>
 </div>
 <div class="macro-item-btn-holder">
   <button><img src="./assets/edit.svg" alt="Edit" width="20" height="20"></img></button>
-  <button><img src="./assets/trash.svg" alt="Edit" width="20" height="20"></img></button>
+  <button><img src="./assets/trash.svg" alt="Delete" width="20" height="20"></img></button>
 </div>
 `;
   (newItem.getElementsByClassName("macro-name").item(0) as HTMLInputElement).addEventListener('change', (event) => {
     macro.name = (event.target as HTMLInputElement).value;
+    setData();
+  });
+
+  (newItem.getElementsByClassName("macro-type").item(0) as HTMLInputElement).addEventListener('change', (event) => {
+    //@ts-ignore
+    macro.macroType = (event.target as HTMLSelectElement).value; 
     setData();
   });
 
@@ -124,13 +150,19 @@ function viewMacroItem(macrosList: HTMLElement, macro: Macro) {
     app.view = "macro-list";
     chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
       const tab = tabs[0];
+      if (!tab || !canSendMessageToTab(tab)) {
+        macro.active = false;
+        setData();
+        render();
+        return;
+      }
       if (macro.active) {
-        chrome.tabs.sendMessage(tab.id, {
+        sendTabMessage(tab.id, {
           type: "play.Macro",
           macro,
         });
       } else {
-        chrome.tabs.sendMessage(tab.id, {
+        sendTabMessage(tab.id, {
           type: "stop.Macro",
           macro
         })
@@ -175,24 +207,37 @@ function getEventName(event: MacroEvent | EventCondition) {
 function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: number) {
   if (event.condition) {
     conditionItem.innerHTML = `
-<select name="condition-event-type" class="condition-event-type">
-  <option value="id">Id</option>
-  <option value="class">Class</option>
-  <option value="text">Text</option>
-</select>
-<input name="condition-event-name" value="${getEventName(event.condition)}" class="condition-event-name"></input>
-<select name="condition-checker-type" class="condition-checker-type">
-  <option value="exist">Exist</option>
-  <option value="non-exist">Non-exist</option>
-</select>
-<button class="condition-delete"><img src="./assets/trash.svg" alt="Delete" width="20" height="20" /></button>
+<div class="">
+  <select name="extra-contidion-type" class="extra-condition-type">
+    ${Object.keys(event.condition.attributes).map((key) => `<option value="${key}">${key}</option>`)}
+  </select>
+  <input value="${event.condition.attributes[event.condition.attributeId]}"></input>
+</div>
+
+<div class"">
+  <select name="condition-event-type" class="condition-event-type">
+    <option value="id">Id</option>
+    <option value="class">Class</option>
+    <option value="text">Text</option>
+  </select>
+  <input name="condition-event-name" value="${getEventName(event.condition)}" class="condition-event-name"></input>
+  <select name="condition-checker-type" class="condition-checker-type">
+    <option value="exist">Exist</option>
+    <option value="non-exist">Non-exist</option>
+  </select>
+  <button class="condition-delete"><img src="./assets/trash.svg" alt="Delete" width="20" height="20" /></button>
+</div>
 `;
     let conditionType = conditionItem.querySelector(".condition-event-type") as HTMLSelectElement;
     let eventName = conditionItem.querySelector(".condition-event-name") as HTMLInputElement;
     let checkerType = conditionItem.querySelector(".condition-checker-type") as HTMLSelectElement;
     let deleteBtn = conditionItem.querySelector(".condition-delete") as HTMLButtonElement;
+    let extraType = conditionItem.querySelector(".extra-condition-type") as HTMLSelectElement;
     // console.log("Condition ", event.condition);
 
+    conditionItem.classList.add('d-flex', 'column')
+
+    extraType.value = event.condition.attributeId
     conditionType.value = event.condition.type;
     checkerType.value = event.condition.checker;
 
@@ -200,6 +245,11 @@ function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: nu
       setData();
       render();
     }
+
+    extraType.addEventListener('change', (ev) => {
+      event.condition.attributeId = (ev.target as HTMLSelectElement).value;
+      updateRender();
+    })
 
     conditionType.addEventListener('change', (ev) => {
       event.condition.type = (ev.target as HTMLSelectElement).value as typeof event.condition.type;
@@ -238,7 +288,10 @@ function viewConditionEvent(conditionItem: Element, event: MacroEvent, index: nu
       chrome.tabs.query({ active: true, currentWindow: true },
         (tabs) => {
           const currentTab = tabs[0];
-          chrome.tabs.sendMessage(currentTab.id, {
+          if (!currentTab || !canSendMessageToTab(currentTab)) {
+            return;
+          }
+          sendTabMessage(currentTab.id, {
             type: "pickup.Condition",
             eventIdx: index,
           });
@@ -409,6 +462,7 @@ function viewEventList() {
         id: app.createIdx++,
         name: "new macro",
         active: false,
+        macroType: "periodic",
         events: [],
       });
       app.view = "event-list";
@@ -428,7 +482,10 @@ function viewEventList() {
       chrome.tabs.query({ active: true, currentWindow: true },
         (tabs) => {
           const currentTab = tabs[0];
-          chrome.tabs.sendMessage(currentTab.id, {
+          if (!currentTab || !canSendMessageToTab(currentTab)) {
+            return;
+          }
+          sendTabMessage(currentTab.id, {
             type: "pickup.Element",
           });
         }
@@ -444,4 +501,3 @@ function viewEventList() {
     });
   }
 }
-

@@ -4,6 +4,8 @@ export type EventCondition = {
   id: string,
   className: string,
   text: string,
+  attributeId: string,
+  attributes: {},
   checker: "exist" | "non-exist",
   index: number,
 };
@@ -11,6 +13,8 @@ export type EventCondition = {
 export type MacroEvent = {
   eventId: number,
   type: "class" | "id" | "text",
+  attributeId: string,
+  attributes: {},
   id: string,
   className: string,
   text: string,
@@ -25,6 +29,7 @@ export type Macro = {
   id: number,
   active: boolean,
   name: string,
+  macroType: "once" | "periodic",
   events: Array<MacroEvent>
 };
 

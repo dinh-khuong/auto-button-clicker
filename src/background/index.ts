@@ -2,6 +2,7 @@ import type { Macro, App } from "../content/macro";
 
 console.log("Background runing")
 
+var debug = false
 var macros: Array<Macro> = [];
 var app: App = {
   currentMacroId: -1,
@@ -9,7 +10,7 @@ var app: App = {
   createIdx: 0,
 };
 
-if (false) {
+if (debug) {
   chrome.storage.local.set({ macros, app }, () => {
     console.log("Save data", macros, app);
   });
@@ -32,19 +33,18 @@ function getData(callback: () => void) {
 
 getData(() => { });
 
-function setData() {
-  chrome.storage.local.set({ macros, app }, () => {
-    console.log("Save data", macros, app);
-  });
-}
+// function setData() {
+//   chrome.storage.local.set({ macros, app }, () => {
+//     console.log("Save data", macros, app);
+//   });
+// }
 
 let tabs: { [key: number]: boolean } = {}
-// Example function to attach to a tab (triggered by some user action, e.g., button click)
 function attachToTab(tabId: number) {
   if (tabs[tabId]) {
     return;
   }
-  const protocolVersion = '1.3'; // Use an appropriate protocol version
+  const protocolVersion = '1.3';
 
   Reflect.set(tabs, tabId, true);
 
@@ -115,7 +115,6 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
   }
 })
 
-// Remember to add chrome.debugger.onDetach listener for cleanup
 chrome.debugger.onDetach.addListener((source: chrome._debugger.Debuggee, reason: `${chrome._debugger.DetachReason}`) => {
   console.log(`Debugger detached from ${source.tabId} for reason: ${reason}`);
 });
@@ -126,9 +125,6 @@ chrome.alarms.create("keepAliveAlarm", { periodInMinutes: 0.40 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepAliveAlarm") {
     console.log("Alarm woke up the background worker!");
-    // You don't actually have to put code here. Just the alarm firing 
-    // is enough to boot the Service Worker back up.
   }
 });
-
 

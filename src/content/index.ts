@@ -43,14 +43,19 @@ function runMacro(macro: Macro) {
       return;
     }
 
-    if (index >= macro.events.length) {
+    if (index >= macro.events.length && macro.macroType === "periodic") {
       setTimeout(() => {
         oneEvent(0, -1);
       }, 500);
       return;
     }
 
-    const event = macro.events[index];
+    const event = macro.events[index] ?? null;
+    console.log(event, index)
+    if (!event) {
+      return;
+    }
+
     clickElement({
       event,
       success: () => {
@@ -73,11 +78,11 @@ function runMacro(macro: Macro) {
   oneEvent(0, -1);
 }
 
-setInterval(() => {
-  if (macros.filter((ele) => ele.active).length === 0) {
-    dettachDebugger();
-  }
-}, 1000);
+// setInterval(() => {
+//   if (macros.filter((ele) => ele.active).length === 0) {
+//     dettachDebugger();
+//   }
+// }, 1000);
 
 
 const boxElement = document.createElement("div");
@@ -131,6 +136,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender: chrome.runtime.Mess
       getData(() => { });
       break;
     case "play.Macro":
+      console.log("Run macro", message.macro)
       runMacro(message.macro);
       break;
     case "stop.Macro":
@@ -146,11 +152,14 @@ function _addNewCondition(event: PointerEvent, eventIdx: number) {
   const currentElement = event.target as HTMLElement;
   const eleId = currentElement.id;
   const eleClasses = currentElement.classList.toString();
+  const allAttributes = getAllHtmlElementAttributes(currentElement);
 
   let eventCondition: EventCondition = {
     type: "class",
     id: eleId,
     className: eleClasses,
+    attributeId: "class",
+    attributes: allAttributes,
     text: currentElement.textContent.length < 128 ? currentElement.textContent : "",
     index: 0,
     checker: "exist",
@@ -166,6 +175,15 @@ function _addNewCondition(event: PointerEvent, eventIdx: number) {
     }
   }
 }
+function getAllHtmlElementAttributes(element: HTMLElement) {
+  const allAttributes = {};
+
+  Array.from(element.attributes).forEach(attr => {
+    allAttributes[attr.name] = attr.value;
+  });
+
+  return allAttributes;
+}
 
 function addNewMacro(event: PointerEvent) {
   if (!event.target) {
@@ -177,9 +195,12 @@ function addNewMacro(event: PointerEvent) {
 
   const eleId = currentElement.id;
   const eleClasses = currentElement.classList.toString();
+  const allAttributes = getAllHtmlElementAttributes(currentElement);
 
   let macroEvent: MacroEvent = {
     eventId: app.createIdx++,
+    attributeId: "",
+    attributes: allAttributes,
     type: "class",
     id: eleId,
     className: eleClasses,

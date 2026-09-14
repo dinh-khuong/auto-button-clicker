@@ -217,5 +217,15 @@ button:disabled {
   }
 }
 
+.d-flex {
+	display: flex;
+}
 
+.row {
+	flex-direction: row;
+}
+
+.column {
+	flex-direction: column;
+}
 

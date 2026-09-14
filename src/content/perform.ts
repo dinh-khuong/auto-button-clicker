@@ -26,11 +26,23 @@ function getElement(event: MacroEvent | EventCondition) {
 }
 
 async function clickElement({ event, success, failed, }: { event: MacroEvent, success: () => void, failed: () => void }) {
+
   if (event.condition) {
     let element = getElement(event.condition);
+
     if (!(element && event.condition.checker === "exist" || !element && event.condition.checker === "non-exist")) {
       failed();
       return;
+    }
+
+    if (event.condition.attributeId) {
+      let extraConditionValue = event.condition.attributes[event.condition.attributeId]
+      let elementAttr = element?.attributes.getNamedItem(event.condition.attributeId)
+
+      if (extraConditionValue !== elementAttr?.value) {
+        failed();
+        return;
+      }
     }
   }
 
@@ -81,4 +93,3 @@ async function attachDebugger() {
 }
 
 export { clickElement, attachDebugger, dettachDebugger, checkQuerries };
-
