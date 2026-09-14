@@ -43,10 +43,14 @@ function runMacro(macro: Macro) {
       return;
     }
 
-    if (index >= macro.events.length && macro.macroType === "periodic") {
-      setTimeout(() => {
-        oneEvent(0, -1);
-      }, 500);
+    if (index >= macro.events.length) {
+      if (macro.macroType === "periodic") {
+        setTimeout(() => {
+          oneEvent(0, -1);
+        }, 500);
+      } else {
+        dettachDebugger()
+      }
       return;
     }
 
